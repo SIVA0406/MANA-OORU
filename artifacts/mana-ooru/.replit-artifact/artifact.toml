@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Mana Ooru"
+version = "1.0.0"
+id = "artifacts/mana-ooru"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25481
+
+[services.development]
+run = "pnpm --filter @workspace/mana-ooru run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/mana-ooru", "run", "build" ]
+publicDir = "artifacts/mana-ooru/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25481"
+BASE_PATH = "/"

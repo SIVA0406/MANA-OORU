@@ -3,13 +3,17 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Mana Ooru - Smart Village Crop Procurement Platform
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: farmers
+    description: Farmer procurement records
+  - name: dashboard
+    description: Dashboard summary and analytics
 paths:
   /healthz:
     get:
@@ -24,6 +28,142 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /farmers:
+    get:
+      operationId: listFarmers
+      tags: [farmers]
+      summary: List all farmers
+      responses:
+        "200":
+          description: List of farmers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Farmer"
+    post:
+      operationId: createFarmer
+      tags: [farmers]
+      summary: Add a new farmer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FarmerInput"
+      responses:
+        "201":
+          description: Farmer created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Farmer"
+        "400":
+          description: Validation error
+
+  /farmers/{id}:
+    get:
+      operationId: getFarmer
+      tags: [farmers]
+      summary: Get a farmer by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Farmer record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Farmer"
+        "404":
+          description: Farmer not found
+    patch:
+      operationId: updateFarmer
+      tags: [farmers]
+      summary: Update farmer details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FarmerUpdate"
+      responses:
+        "200":
+          description: Updated farmer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Farmer"
+        "404":
+          description: Farmer not found
+    delete:
+      operationId: deleteFarmer
+      tags: [farmers]
+      summary: Delete a farmer record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Farmer not found
+
+  /farmers/{id}/payment:
+    patch:
+      operationId: updatePaymentStatus
+      tags: [farmers]
+      summary: Update payment status for a farmer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentStatusUpdate"
+      responses:
+        "200":
+          description: Payment status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Farmer"
+        "404":
+          description: Farmer not found
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get procurement summary stats
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +174,94 @@ components:
       required:
         - status
 
+    Farmer:
+      type: object
+      required: [id, name, village, crop, quantity, moisture, paymentStatus, bankAccount, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        village:
+          type: string
+        crop:
+          type: string
+        quantity:
+          type: number
+        moisture:
+          type: string
+        paymentStatus:
+          type: string
+          enum: [Pending, Completed]
+        bankAccount:
+          type: string
+        createdAt:
+          type: string
+
+    FarmerInput:
+      type: object
+      required: [name, village, crop, quantity, moisture, bankAccount]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        village:
+          type: string
+          minLength: 1
+        crop:
+          type: string
+          minLength: 1
+        quantity:
+          type: number
+          minimum: 1
+        moisture:
+          type: string
+          minLength: 1
+        bankAccount:
+          type: string
+          minLength: 1
+
+    FarmerUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        village:
+          type: string
+        crop:
+          type: string
+        quantity:
+          type: number
+        moisture:
+          type: string
+        bankAccount:
+          type: string
+
+    PaymentStatusUpdate:
+      type: object
+      required: [paymentStatus]
+      properties:
+        paymentStatus:
+          type: string
+          enum: [Pending, Completed]
+
+    DashboardSummary:
+      type: object
+      required: [totalFarmers, totalQuantity, pendingPayments, completedPayments, villages, crops]
+      properties:
+        totalFarmers:
+          type: integer
+        totalQuantity:
+          type: number
+        pendingPayments:
+          type: integer
+        completedPayments:
+          type: integer
+        villages:
+          type: array
+          items:
+            type: string
+        crops:
+          type: array
+          items:
+            type: string

@@ -1,0 +1,72 @@
+import { Link, useLocation } from "wouter";
+import { LayoutDashboard, Users, Sprout } from "lucide-react";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarProvider,
+  SidebarTrigger,
+  SidebarInset
+} from "@/components/ui/sidebar";
+
+export function AppLayout({ children }: { children: React.ReactNode }) {
+  const [location] = useLocation();
+
+  return (
+    <SidebarProvider>
+      <div className="flex min-h-screen w-full bg-background">
+        <Sidebar className="border-r border-border bg-sidebar">
+          <SidebarHeader className="p-4 flex items-center border-b border-border">
+            <div className="flex items-center gap-2 font-bold text-lg text-sidebar-foreground w-full px-2">
+              <Sprout className="w-6 h-6 text-primary" />
+              <span>Mana Ooru</span>
+            </div>
+          </SidebarHeader>
+          <SidebarContent className="px-2 py-4">
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  asChild 
+                  isActive={location === "/" || location === "/farmers"}
+                  className="font-medium"
+                >
+                  <Link href="/" data-testid="link-farmers">
+                    <Users className="w-5 h-5" />
+                    <span>Procurement</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  asChild 
+                  isActive={location === "/dashboard"}
+                  className="font-medium"
+                >
+                  <Link href="/dashboard" data-testid="link-dashboard">
+                    <LayoutDashboard className="w-5 h-5" />
+                    <span>Dashboard</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarContent>
+        </Sidebar>
+
+        <SidebarInset className="flex-1 flex flex-col bg-background relative overflow-hidden">
+          <header className="h-16 flex items-center px-6 border-b bg-card border-border gap-4 sticky top-0 z-10">
+            <SidebarTrigger />
+            <div className="font-semibold text-lg ml-2">Smart Village Crop Procurement</div>
+          </header>
+          <main className="flex-1 p-6 overflow-auto">
+            <div className="max-w-6xl mx-auto w-full">
+              {children}
+            </div>
+          </main>
+        </SidebarInset>
+      </div>
+    </SidebarProvider>
+  );
+}

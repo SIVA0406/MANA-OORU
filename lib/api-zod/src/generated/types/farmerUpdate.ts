@@ -6,6 +6,11 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface HealthStatus {
-  status: string;
+export interface FarmerUpdate {
+  name?: string;
+  village?: string;
+  crop?: string;
+  quantity?: number;
+  moisture?: string;
+  bankAccount?: string;
 }
