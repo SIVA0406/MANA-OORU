@@ -22,5 +22,6 @@ export interface FarmerInput {
   cropGrade?: string;
   harvestDate?: string;
   notes?: string;
+  profilePhotoUrl?: string;
   mediaUrls?: string[];
 }

@@ -286,6 +286,8 @@ components:
           type: ["string", "null"]
         notes:
           type: ["string", "null"]
+        profilePhotoUrl:
+          type: ["string", "null"]
         mediaUrls:
           type: array
           items:
@@ -321,6 +323,8 @@ components:
           type: string
         notes:
           type: string
+        profilePhotoUrl:
+          type: string
         mediaUrls:
           type: array
           items:
@@ -346,6 +350,8 @@ components:
         harvestDate:
           type: string
         notes:
+          type: string
+        profilePhotoUrl:
           type: string
         mediaUrls:
           type: array

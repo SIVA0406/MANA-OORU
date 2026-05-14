@@ -38,7 +38,7 @@ import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import {
   Trash2, CheckCircle2, CircleDashed, Plus, Edit,
-  Users, Wheat, IndianRupee, Camera, Video, X, ImageIcon, Loader2
+  Users, Wheat, IndianRupee, Camera, Video, X, ImageIcon, Loader2, UserCircle2
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLanguage } from "@/lib/language";
@@ -53,6 +53,7 @@ const farmerSchema = z.object({
   cropGrade: z.string().optional(),
   harvestDate: z.string().optional(),
   notes: z.string().optional(),
+  profilePhotoUrl: z.string().optional(),
   mediaUrls: z.array(z.string()).optional(),
 });
 
@@ -189,6 +190,85 @@ function MediaUploadSection({
   );
 }
 
+function FarmerPhotoUpload({
+  value,
+  onChange,
+}: {
+  value: string | undefined;
+  onChange: (url: string | null) => void;
+}) {
+  const { t } = useLanguage();
+  const { toast } = useToast();
+  const [uploading, setUploading] = useState(false);
+  const [preview, setPreview] = useState<string | null>(value ? `/api/storage${value}` : null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleFile = async (file: File) => {
+    setPreview(URL.createObjectURL(file));
+    setUploading(true);
+    try {
+      const res = await fetch("/api/storage/uploads/request-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: file.name, size: file.size, contentType: file.type }),
+      });
+      const { uploadURL, objectPath } = await res.json();
+      await fetch(uploadURL, { method: "PUT", headers: { "Content-Type": file.type }, body: file });
+      onChange(objectPath as string);
+    } catch {
+      toast({ title: t.toastError, description: t.toastUploadFailed, variant: "destructive" });
+      setPreview(null);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-4">
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        disabled={uploading}
+        className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-dashed border-primary/40 hover:border-primary transition-colors bg-muted flex items-center justify-center group shrink-0"
+      >
+        {preview ? (
+          <img src={preview} alt="farmer" className="w-full h-full object-cover" />
+        ) : (
+          <UserCircle2 className="w-8 h-8 text-muted-foreground group-hover:text-primary transition-colors" />
+        )}
+        {uploading && (
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+            <Loader2 className="w-5 h-5 text-white animate-spin" />
+          </div>
+        )}
+        <div className="absolute bottom-0 right-0 bg-primary rounded-full p-0.5">
+          <Camera className="w-2.5 h-2.5 text-primary-foreground" />
+        </div>
+      </button>
+      <div className="flex-1">
+        <p className="text-xs font-medium text-foreground">{t.fieldFarmerPhoto}</p>
+        <p className="text-xs text-muted-foreground mt-0.5">{t.farmerPhotoHint}</p>
+        {preview && (
+          <button
+            type="button"
+            onClick={() => { setPreview(null); onChange(""); }}
+            className="text-xs text-destructive hover:underline mt-1"
+          >
+            {t.removeMedia}
+          </button>
+        )}
+      </div>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+      />
+    </div>
+  );
+}
+
 function FarmerFormFields({
   form,
   isCreate = false,
@@ -200,6 +280,17 @@ function FarmerFormFields({
 
   return (
     <div className="space-y-4 py-4">
+      <FormField control={form.control} name="profilePhotoUrl" render={({ field }) => (
+        <FormItem>
+          <FormControl>
+            <FarmerPhotoUpload
+              value={field.value}
+              onChange={(url) => field.onChange(url ?? "")}
+            />
+          </FormControl>
+        </FormItem>
+      )} />
+
       <div className="grid grid-cols-2 gap-4">
         <FormField control={form.control} name="name" render={({ field }) => (
           <FormItem>
@@ -327,7 +418,7 @@ function EditFarmerDialog({ id, open, onOpenChange }: { id: number | null; open:
     resolver: zodResolver(farmerSchema),
     defaultValues: {
       name: "", village: "", crop: "Paddy", quantity: 0,
-      moisture: "", bankAccount: "", cropGrade: "", harvestDate: "", notes: "", mediaUrls: [],
+      moisture: "", bankAccount: "", cropGrade: "", harvestDate: "", notes: "", profilePhotoUrl: "", mediaUrls: [],
     },
   });
 
@@ -343,6 +434,7 @@ function EditFarmerDialog({ id, open, onOpenChange }: { id: number | null; open:
         cropGrade: farmer.cropGrade ?? "",
         harvestDate: farmer.harvestDate ?? "",
         notes: farmer.notes ?? "",
+        profilePhotoUrl: farmer.profilePhotoUrl ?? "",
         mediaUrls: farmer.mediaUrls ?? [],
       });
     }
@@ -456,7 +548,7 @@ export default function FarmersPage() {
     resolver: zodResolver(farmerSchema),
     defaultValues: {
       name: "", village: "", crop: "Paddy", quantity: 0,
-      moisture: "", bankAccount: "", cropGrade: "", harvestDate: "", notes: "", mediaUrls: [],
+      moisture: "", bankAccount: "", cropGrade: "", harvestDate: "", notes: "", profilePhotoUrl: "", mediaUrls: [],
     },
   });
 
@@ -468,6 +560,7 @@ export default function FarmersPage() {
           cropGrade: values.cropGrade || undefined,
           harvestDate: values.harvestDate || undefined,
           notes: values.notes || undefined,
+          profilePhotoUrl: values.profilePhotoUrl || undefined,
           mediaUrls: values.mediaUrls ?? [],
         }
       },
@@ -621,8 +714,25 @@ export default function FarmersPage() {
                 return (
                   <TableRow key={farmer.id} data-testid={`row-farmer-${farmer.id}`}>
                     <TableCell>
-                      <div className="font-semibold text-card-foreground">{farmer.name}</div>
-                      <div className="text-xs text-muted-foreground mt-1">{t.idLabel} {farmer.id}</div>
+                      <div className="flex items-center gap-3">
+                        {farmer.profilePhotoUrl ? (
+                          <img
+                            src={`/api/storage${farmer.profilePhotoUrl}`}
+                            alt={farmer.name}
+                            className="w-10 h-10 rounded-full object-cover border border-border shrink-0"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-primary/10 border border-border flex items-center justify-center shrink-0">
+                            <span className="text-sm font-bold text-primary">
+                              {farmer.name.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                        )}
+                        <div>
+                          <div className="font-semibold text-card-foreground">{farmer.name}</div>
+                          <div className="text-xs text-muted-foreground mt-0.5">{t.idLabel} {farmer.id}</div>
+                        </div>
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="font-medium text-foreground">{farmer.village}</div>

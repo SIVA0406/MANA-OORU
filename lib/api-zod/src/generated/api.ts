@@ -30,6 +30,7 @@ export const ListFarmersResponseItem = zod.object({
   cropGrade: zod.string().nullish(),
   harvestDate: zod.string().nullish(),
   notes: zod.string().nullish(),
+  profilePhotoUrl: zod.string().nullish(),
   mediaUrls: zod.array(zod.string()),
   createdAt: zod.string(),
 });
@@ -49,6 +50,7 @@ export const CreateFarmerBody = zod.object({
   cropGrade: zod.string().optional(),
   harvestDate: zod.string().optional(),
   notes: zod.string().optional(),
+  profilePhotoUrl: zod.string().optional(),
   mediaUrls: zod.array(zod.string()).optional(),
 });
 
@@ -71,6 +73,7 @@ export const GetFarmerResponse = zod.object({
   cropGrade: zod.string().nullish(),
   harvestDate: zod.string().nullish(),
   notes: zod.string().nullish(),
+  profilePhotoUrl: zod.string().nullish(),
   mediaUrls: zod.array(zod.string()),
   createdAt: zod.string(),
 });
@@ -92,6 +95,7 @@ export const UpdateFarmerBody = zod.object({
   cropGrade: zod.string().optional(),
   harvestDate: zod.string().optional(),
   notes: zod.string().optional(),
+  profilePhotoUrl: zod.string().optional(),
   mediaUrls: zod.array(zod.string()).optional(),
 });
 
@@ -107,6 +111,7 @@ export const UpdateFarmerResponse = zod.object({
   cropGrade: zod.string().nullish(),
   harvestDate: zod.string().nullish(),
   notes: zod.string().nullish(),
+  profilePhotoUrl: zod.string().nullish(),
   mediaUrls: zod.array(zod.string()),
   createdAt: zod.string(),
 });
@@ -141,6 +146,7 @@ export const UpdatePaymentStatusResponse = zod.object({
   cropGrade: zod.string().nullish(),
   harvestDate: zod.string().nullish(),
   notes: zod.string().nullish(),
+  profilePhotoUrl: zod.string().nullish(),
   mediaUrls: zod.array(zod.string()),
   createdAt: zod.string(),
 });

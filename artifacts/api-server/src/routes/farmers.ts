@@ -45,6 +45,7 @@ router.post("/farmers", async (req, res): Promise<void> => {
     cropGrade: parsed.data.cropGrade ?? null,
     harvestDate: parsed.data.harvestDate ?? null,
     notes: parsed.data.notes ?? null,
+    profilePhotoUrl: parsed.data.profilePhotoUrl ?? null,
     mediaUrls: parsed.data.mediaUrls ?? [],
   }).returning();
 
@@ -91,6 +92,7 @@ router.patch("/farmers/:id", async (req, res): Promise<void> => {
   if (parsed.data.cropGrade !== undefined) updateData.cropGrade = parsed.data.cropGrade;
   if (parsed.data.harvestDate !== undefined) updateData.harvestDate = parsed.data.harvestDate;
   if (parsed.data.notes !== undefined) updateData.notes = parsed.data.notes;
+  if (parsed.data.profilePhotoUrl !== undefined) updateData.profilePhotoUrl = parsed.data.profilePhotoUrl;
   if (parsed.data.mediaUrls !== undefined) updateData.mediaUrls = parsed.data.mediaUrls;
 
   const [farmer] = await db.update(farmersTable).set(updateData).where(eq(farmersTable.id, params.data.id)).returning();

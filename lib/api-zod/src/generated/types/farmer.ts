@@ -22,6 +22,8 @@ export interface Farmer {
   harvestDate?: string | null;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  profilePhotoUrl?: string | null;
   mediaUrls: string[];
   createdAt: string;
 }

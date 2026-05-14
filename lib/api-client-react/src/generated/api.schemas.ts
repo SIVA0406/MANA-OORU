@@ -32,6 +32,8 @@ export interface Farmer {
   harvestDate?: string | null;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  profilePhotoUrl?: string | null;
   mediaUrls: string[];
   createdAt: string;
 }
@@ -52,6 +54,7 @@ export interface FarmerInput {
   cropGrade?: string;
   harvestDate?: string;
   notes?: string;
+  profilePhotoUrl?: string;
   mediaUrls?: string[];
 }
 
@@ -65,6 +68,7 @@ export interface FarmerUpdate {
   cropGrade?: string;
   harvestDate?: string;
   notes?: string;
+  profilePhotoUrl?: string;
   mediaUrls?: string[];
 }
 

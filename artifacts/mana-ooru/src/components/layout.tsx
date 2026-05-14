@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, Users, Sprout, Languages } from "lucide-react";
+import { LayoutDashboard, Users, Sprout, Languages, Pencil } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -14,10 +14,15 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/lib/language";
+import { useBuyerProfile } from "@/lib/buyer-profile";
+import { useState } from "react";
+import { BuyerSetupModal } from "@/components/buyer-setup-modal";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const { t, toggleLanguage } = useLanguage();
+  const { profile } = useBuyerProfile();
+  const [editingProfile, setEditingProfile] = useState(false);
 
   return (
     <SidebarProvider>
@@ -59,7 +64,34 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </SidebarMenu>
           </SidebarContent>
 
-          <SidebarFooter className="p-3 border-t border-border">
+          <SidebarFooter className="p-3 border-t border-border space-y-2">
+            {profile && (
+              <button
+                type="button"
+                onClick={() => setEditingProfile(true)}
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-sidebar-accent transition-colors group"
+              >
+                {profile.photoUrl ? (
+                  <img
+                    src={`/api/storage${profile.photoUrl}`}
+                    alt={profile.name}
+                    className="w-9 h-9 rounded-full object-cover border-2 border-primary/30 shrink-0"
+                  />
+                ) : (
+                  <div className="w-9 h-9 rounded-full bg-primary/10 border-2 border-primary/30 flex items-center justify-center shrink-0">
+                    <span className="text-sm font-bold text-primary">
+                      {profile.name.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                )}
+                <div className="flex-1 min-w-0 text-left">
+                  <p className="text-xs text-muted-foreground leading-none">{t.welcomeBack}</p>
+                  <p className="text-sm font-semibold text-sidebar-foreground truncate mt-0.5">{profile.name}</p>
+                </div>
+                <Pencil className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+              </button>
+            )}
+
             <Button
               variant="outline"
               className="w-full justify-start gap-2 font-medium text-sm"
@@ -84,6 +116,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </main>
         </SidebarInset>
       </div>
+
+      {editingProfile && (
+        <BuyerSetupModal onDone={() => setEditingProfile(false)} />
+      )}
     </SidebarProvider>
   );
 }
