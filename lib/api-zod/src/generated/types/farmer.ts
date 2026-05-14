@@ -16,5 +16,12 @@ export interface Farmer {
   moisture: string;
   paymentStatus: FarmerPaymentStatus;
   bankAccount: string;
+  /** @nullable */
+  cropGrade?: string | null;
+  /** @nullable */
+  harvestDate?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  mediaUrls: string[];
   createdAt: string;
 }

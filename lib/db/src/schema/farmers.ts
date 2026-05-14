@@ -11,6 +11,10 @@ export const farmersTable = pgTable("farmers", {
   moisture: text("moisture").notNull(),
   paymentStatus: text("payment_status").notNull().default("Pending"),
   bankAccount: text("bank_account").notNull(),
+  cropGrade: text("crop_grade"),
+  harvestDate: text("harvest_date"),
+  notes: text("notes"),
+  mediaUrls: text("media_urls").array().notNull().default([]),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

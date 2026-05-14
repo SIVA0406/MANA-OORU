@@ -26,6 +26,13 @@ export interface Farmer {
   moisture: string;
   paymentStatus: FarmerPaymentStatus;
   bankAccount: string;
+  /** @nullable */
+  cropGrade?: string | null;
+  /** @nullable */
+  harvestDate?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  mediaUrls: string[];
   createdAt: string;
 }
 
@@ -42,6 +49,10 @@ export interface FarmerInput {
   moisture: string;
   /** @minLength 1 */
   bankAccount: string;
+  cropGrade?: string;
+  harvestDate?: string;
+  notes?: string;
+  mediaUrls?: string[];
 }
 
 export interface FarmerUpdate {
@@ -51,6 +62,10 @@ export interface FarmerUpdate {
   quantity?: number;
   moisture?: string;
   bankAccount?: string;
+  cropGrade?: string;
+  harvestDate?: string;
+  notes?: string;
+  mediaUrls?: string[];
 }
 
 export type PaymentStatusUpdatePaymentStatus =
@@ -72,4 +87,23 @@ export interface DashboardSummary {
   completedPayments: number;
   villages: string[];
   crops: string[];
+}
+
+export interface UploadUrlRequest {
+  /** @minLength 1 */
+  name: string;
+  /** @minimum 1 */
+  size: number;
+  /** @minLength 1 */
+  contentType: string;
+}
+
+export interface UploadUrlResponse {
+  uploadURL: string;
+  objectPath: string;
+  metadata?: UploadUrlRequest;
+}
+
+export interface ErrorEnvelope {
+  error: string;
 }

@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db, farmersTable } from "@workspace/db";
 import {
   CreateFarmerBody,
@@ -13,13 +13,18 @@ import {
 
 const router: IRouter = Router();
 
-router.get("/farmers", async (_req, res): Promise<void> => {
-  const farmers = await db.select().from(farmersTable).orderBy(farmersTable.createdAt);
-  res.json(farmers.map((f) => ({
+function serializeFarmer(f: typeof farmersTable.$inferSelect) {
+  return {
     ...f,
     paymentStatus: f.paymentStatus as "Pending" | "Completed",
+    mediaUrls: f.mediaUrls ?? [],
     createdAt: f.createdAt.toISOString(),
-  })));
+  };
+}
+
+router.get("/farmers", async (_req, res): Promise<void> => {
+  const farmers = await db.select().from(farmersTable).orderBy(farmersTable.createdAt);
+  res.json(farmers.map(serializeFarmer));
 });
 
 router.post("/farmers", async (req, res): Promise<void> => {
@@ -37,13 +42,13 @@ router.post("/farmers", async (req, res): Promise<void> => {
     moisture: parsed.data.moisture,
     bankAccount: parsed.data.bankAccount,
     paymentStatus: "Pending",
+    cropGrade: parsed.data.cropGrade ?? null,
+    harvestDate: parsed.data.harvestDate ?? null,
+    notes: parsed.data.notes ?? null,
+    mediaUrls: parsed.data.mediaUrls ?? [],
   }).returning();
 
-  res.status(201).json({
-    ...farmer,
-    paymentStatus: farmer.paymentStatus as "Pending" | "Completed",
-    createdAt: farmer.createdAt.toISOString(),
-  });
+  res.status(201).json(serializeFarmer(farmer));
 });
 
 router.get("/farmers/:id", async (req, res): Promise<void> => {
@@ -60,11 +65,7 @@ router.get("/farmers/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  res.json({
-    ...farmer,
-    paymentStatus: farmer.paymentStatus as "Pending" | "Completed",
-    createdAt: farmer.createdAt.toISOString(),
-  });
+  res.json(serializeFarmer(farmer));
 });
 
 router.patch("/farmers/:id", async (req, res): Promise<void> => {
@@ -87,6 +88,10 @@ router.patch("/farmers/:id", async (req, res): Promise<void> => {
   if (parsed.data.quantity !== undefined) updateData.quantity = parsed.data.quantity;
   if (parsed.data.moisture !== undefined) updateData.moisture = parsed.data.moisture;
   if (parsed.data.bankAccount !== undefined) updateData.bankAccount = parsed.data.bankAccount;
+  if (parsed.data.cropGrade !== undefined) updateData.cropGrade = parsed.data.cropGrade;
+  if (parsed.data.harvestDate !== undefined) updateData.harvestDate = parsed.data.harvestDate;
+  if (parsed.data.notes !== undefined) updateData.notes = parsed.data.notes;
+  if (parsed.data.mediaUrls !== undefined) updateData.mediaUrls = parsed.data.mediaUrls;
 
   const [farmer] = await db.update(farmersTable).set(updateData).where(eq(farmersTable.id, params.data.id)).returning();
 
@@ -95,11 +100,7 @@ router.patch("/farmers/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  res.json({
-    ...farmer,
-    paymentStatus: farmer.paymentStatus as "Pending" | "Completed",
-    createdAt: farmer.createdAt.toISOString(),
-  });
+  res.json(serializeFarmer(farmer));
 });
 
 router.delete("/farmers/:id", async (req, res): Promise<void> => {
@@ -143,11 +144,7 @@ router.patch("/farmers/:id/payment", async (req, res): Promise<void> => {
     return;
   }
 
-  res.json({
-    ...farmer,
-    paymentStatus: farmer.paymentStatus as "Pending" | "Completed",
-    createdAt: farmer.createdAt.toISOString(),
-  });
+  res.json(serializeFarmer(farmer));
 });
 
 router.get("/dashboard/summary", async (_req, res): Promise<void> => {

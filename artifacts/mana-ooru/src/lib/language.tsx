@@ -28,6 +28,19 @@ const translations = {
     fieldQuantity: "Quantity (Quintals)",
     fieldMoisture: "Moisture %",
     fieldBankAccount: "Bank Account",
+    fieldCropGrade: "Crop Grade",
+    fieldHarvestDate: "Harvest Date",
+    fieldNotes: "Notes / Remarks",
+    fieldMedia: "Photos & Videos",
+
+    cropGradePlaceholder: "e.g. A, B, Grade 1",
+    notesPlaceholder: "Any additional remarks...",
+    uploadMedia: "Upload Photos / Videos",
+    uploading: "Uploading...",
+    uploadDone: "uploaded",
+    mediaSection: "Crop Media",
+    removeMedia: "Remove",
+    viewMedia: "View",
 
     saveRecord: "Save Record",
     updateRecord: "Update Record",
@@ -43,6 +56,7 @@ const translations = {
     idLabel: "ID:",
     qt: "Qt",
     moist: "Moist.",
+    gradeLabel: "Grade",
 
     noRecords: "No records yet",
     noRecordsHint: "Add a farmer to start tracking procurement.",
@@ -55,6 +69,7 @@ const translations = {
     toastError: "Error",
     toastSaveFailed: "Failed to save farmer record.",
     toastUpdateFailed: "Failed to update record.",
+    toastUploadFailed: "Failed to upload file.",
     confirmDelete: "Are you sure you want to delete this record?",
 
     dashboardTitle: "Dashboard",
@@ -100,6 +115,19 @@ const translations = {
     fieldQuantity: "పరిమాణం (క్వింటాళ్లు)",
     fieldMoisture: "తేమ %",
     fieldBankAccount: "బ్యాంకు ఖాతా",
+    fieldCropGrade: "పంట గ్రేడ్",
+    fieldHarvestDate: "పంట కోత తేదీ",
+    fieldNotes: "గమనికలు / వ్యాఖ్యలు",
+    fieldMedia: "ఫోటోలు & వీడియోలు",
+
+    cropGradePlaceholder: "ఉదా: A, B, గ్రేడ్ 1",
+    notesPlaceholder: "ఏదైనా అదనపు వ్యాఖ్యలు...",
+    uploadMedia: "ఫోటోలు / వీడియోలు అప్లోడ్ చేయి",
+    uploading: "అప్లోడ్ అవుతోంది...",
+    uploadDone: "అప్లోడ్",
+    mediaSection: "పంట మీడియా",
+    removeMedia: "తొలగించు",
+    viewMedia: "చూడు",
 
     saveRecord: "రికార్డు సేవ్ చేయి",
     updateRecord: "రికార్డు నవీకరించు",
@@ -115,6 +143,7 @@ const translations = {
     idLabel: "ఐడి:",
     qt: "క్వి",
     moist: "తేమ.",
+    gradeLabel: "గ్రేడ్",
 
     noRecords: "రికార్డులు లేవు",
     noRecordsHint: "కొనుగోలు ట్రాకింగ్ ప్రారంభించడానికి రైతును జోడించండి.",
@@ -127,6 +156,7 @@ const translations = {
     toastError: "లోపం",
     toastSaveFailed: "రైతు రికార్డు సేవ్ చేయడం విఫలమైంది.",
     toastUpdateFailed: "రికార్డు నవీకరించడం విఫలమైంది.",
+    toastUploadFailed: "ఫైల్ అప్లోడ్ విఫలమైంది.",
     confirmDelete: "మీరు ఈ రికార్డును తొలగించాలనుకుంటున్నారా?",
 
     dashboardTitle: "డాష్‌బోర్డ్",

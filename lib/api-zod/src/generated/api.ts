@@ -27,6 +27,10 @@ export const ListFarmersResponseItem = zod.object({
   moisture: zod.string(),
   paymentStatus: zod.enum(["Pending", "Completed"]),
   bankAccount: zod.string(),
+  cropGrade: zod.string().nullish(),
+  harvestDate: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  mediaUrls: zod.array(zod.string()),
   createdAt: zod.string(),
 });
 export const ListFarmersResponse = zod.array(ListFarmersResponseItem);
@@ -42,6 +46,10 @@ export const CreateFarmerBody = zod.object({
   quantity: zod.number().min(1),
   moisture: zod.string().min(1),
   bankAccount: zod.string().min(1),
+  cropGrade: zod.string().optional(),
+  harvestDate: zod.string().optional(),
+  notes: zod.string().optional(),
+  mediaUrls: zod.array(zod.string()).optional(),
 });
 
 /**
@@ -60,6 +68,10 @@ export const GetFarmerResponse = zod.object({
   moisture: zod.string(),
   paymentStatus: zod.enum(["Pending", "Completed"]),
   bankAccount: zod.string(),
+  cropGrade: zod.string().nullish(),
+  harvestDate: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  mediaUrls: zod.array(zod.string()),
   createdAt: zod.string(),
 });
 
@@ -77,6 +89,10 @@ export const UpdateFarmerBody = zod.object({
   quantity: zod.number().optional(),
   moisture: zod.string().optional(),
   bankAccount: zod.string().optional(),
+  cropGrade: zod.string().optional(),
+  harvestDate: zod.string().optional(),
+  notes: zod.string().optional(),
+  mediaUrls: zod.array(zod.string()).optional(),
 });
 
 export const UpdateFarmerResponse = zod.object({
@@ -88,6 +104,10 @@ export const UpdateFarmerResponse = zod.object({
   moisture: zod.string(),
   paymentStatus: zod.enum(["Pending", "Completed"]),
   bankAccount: zod.string(),
+  cropGrade: zod.string().nullish(),
+  harvestDate: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  mediaUrls: zod.array(zod.string()),
   createdAt: zod.string(),
 });
 
@@ -118,6 +138,10 @@ export const UpdatePaymentStatusResponse = zod.object({
   moisture: zod.string(),
   paymentStatus: zod.enum(["Pending", "Completed"]),
   bankAccount: zod.string(),
+  cropGrade: zod.string().nullish(),
+  harvestDate: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  mediaUrls: zod.array(zod.string()),
   createdAt: zod.string(),
 });
 
@@ -131,4 +155,40 @@ export const GetDashboardSummaryResponse = zod.object({
   completedPayments: zod.number(),
   villages: zod.array(zod.string()),
   crops: zod.array(zod.string()),
+});
+
+/**
+ * @summary Request a presigned URL for file upload
+ */
+
+export const RequestUploadUrlBody = zod.object({
+  name: zod.string().min(1),
+  size: zod.number().min(1),
+  contentType: zod.string().min(1),
+});
+
+export const RequestUploadUrlResponse = zod.object({
+  uploadURL: zod.string().url(),
+  objectPath: zod.string(),
+  metadata: zod
+    .object({
+      name: zod.string().min(1),
+      size: zod.number().min(1),
+      contentType: zod.string().min(1),
+    })
+    .optional(),
+});
+
+/**
+ * @summary Serve a public asset
+ */
+export const GetPublicObjectParams = zod.object({
+  filePath: zod.coerce.string(),
+});
+
+/**
+ * @summary Serve a stored object
+ */
+export const GetStorageObjectParams = zod.object({
+  objectPath: zod.coerce.string(),
 });

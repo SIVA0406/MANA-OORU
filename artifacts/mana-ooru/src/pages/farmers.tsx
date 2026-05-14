@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   useListFarmers,
   useCreateFarmer,
@@ -30,12 +30,16 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Trash2, CheckCircle2, CircleDashed, Plus, Edit, Users, Wheat, IndianRupee } from "lucide-react";
+import {
+  Trash2, CheckCircle2, CircleDashed, Plus, Edit,
+  Users, Wheat, IndianRupee, Camera, Video, X, ImageIcon, Loader2
+} from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLanguage } from "@/lib/language";
 
@@ -46,9 +50,267 @@ const farmerSchema = z.object({
   quantity: z.coerce.number().min(0.1),
   moisture: z.string().min(1),
   bankAccount: z.string().min(5),
+  cropGrade: z.string().optional(),
+  harvestDate: z.string().optional(),
+  notes: z.string().optional(),
+  mediaUrls: z.array(z.string()).optional(),
 });
 
-function EditFarmerDialog({ id, open, onOpenChange }: { id: number | null, open: boolean, onOpenChange: (open: boolean) => void }) {
+type FarmerFormValues = z.infer<typeof farmerSchema>;
+
+function isVideoPath(path: string) {
+  return /\.(mp4|mov|avi|webm|mkv)$/i.test(path) || path.includes("video");
+}
+
+function MediaPreview({ objectPath, className = "" }: { objectPath: string; className?: string }) {
+  const src = `/api/storage${objectPath}`;
+  if (isVideoPath(objectPath)) {
+    return (
+      <video
+        src={src}
+        className={`object-cover rounded ${className}`}
+        muted
+        preload="metadata"
+      />
+    );
+  }
+  return (
+    <img
+      src={src}
+      alt="crop photo"
+      className={`object-cover rounded ${className}`}
+      loading="lazy"
+    />
+  );
+}
+
+function MediaUploadSection({
+  value,
+  onChange,
+}: {
+  value: string[];
+  onChange: (urls: string[]) => void;
+}) {
+  const { t } = useLanguage();
+  const { toast } = useToast();
+  const [uploading, setUploading] = useState(false);
+  const [uploadingCount, setUploadingCount] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleFiles = async (files: FileList) => {
+    if (!files.length) return;
+    setUploading(true);
+    setUploadingCount(files.length);
+    const newPaths: string[] = [];
+
+    for (const file of Array.from(files)) {
+      try {
+        const res = await fetch("/api/storage/uploads/request-url", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: file.name, size: file.size, contentType: file.type }),
+        });
+        if (!res.ok) throw new Error("Failed to get upload URL");
+        const { uploadURL, objectPath } = await res.json();
+
+        const putRes = await fetch(uploadURL, {
+          method: "PUT",
+          headers: { "Content-Type": file.type },
+          body: file,
+        });
+        if (!putRes.ok) throw new Error("Upload failed");
+
+        newPaths.push(objectPath as string);
+      } catch {
+        toast({ title: t.toastError, description: t.toastUploadFailed, variant: "destructive" });
+      }
+    }
+
+    onChange([...value, ...newPaths]);
+    setUploading(false);
+    setUploadingCount(0);
+    if (inputRef.current) inputRef.current.value = "";
+  };
+
+  const removeMedia = (path: string) => {
+    onChange(value.filter((p) => p !== path));
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap gap-2">
+        {value.map((path) => (
+          <div key={path} className="relative group w-20 h-20 shrink-0">
+            <MediaPreview objectPath={path} className="w-20 h-20" />
+            {isVideoPath(path) && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded">
+                <Video className="w-6 h-6 text-white" />
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => removeMedia(path)}
+              className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        ))}
+
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={uploading}
+          className="w-20 h-20 border-2 border-dashed border-muted-foreground/30 rounded flex flex-col items-center justify-center gap-1 hover:border-primary/50 hover:bg-muted/30 transition-colors text-muted-foreground shrink-0"
+        >
+          {uploading ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin" />
+              <span className="text-[10px]">{uploadingCount}</span>
+            </>
+          ) : (
+            <>
+              <Camera className="w-5 h-5" />
+              <span className="text-[10px] text-center leading-tight px-1">{t.uploadMedia}</span>
+            </>
+          )}
+        </button>
+      </div>
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*,video/*"
+        multiple
+        className="hidden"
+        onChange={(e) => e.target.files && handleFiles(e.target.files)}
+      />
+    </div>
+  );
+}
+
+function FarmerFormFields({
+  form,
+  isCreate = false,
+}: {
+  form: ReturnType<typeof useForm<FarmerFormValues>>;
+  isCreate?: boolean;
+}) {
+  const { t } = useLanguage();
+
+  return (
+    <div className="space-y-4 py-4">
+      <div className="grid grid-cols-2 gap-4">
+        <FormField control={form.control} name="name" render={({ field }) => (
+          <FormItem>
+            <FormLabel>{t.fieldFarmerName}</FormLabel>
+            <FormControl>
+              <Input {...field} placeholder={isCreate ? "Ramu" : undefined} data-testid={isCreate ? "input-name" : "input-edit-name"} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )} />
+        <FormField control={form.control} name="village" render={({ field }) => (
+          <FormItem>
+            <FormLabel>{t.fieldVillage}</FormLabel>
+            <FormControl>
+              <Input {...field} placeholder={isCreate ? "Kondapur" : undefined} data-testid={isCreate ? "input-village" : "input-edit-village"} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )} />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <FormField control={form.control} name="crop" render={({ field }) => (
+          <FormItem>
+            <FormLabel>{t.fieldCrop}</FormLabel>
+            <FormControl>
+              <Input {...field} data-testid={isCreate ? "input-crop" : "input-edit-crop"} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )} />
+        <FormField control={form.control} name="quantity" render={({ field }) => (
+          <FormItem>
+            <FormLabel>{t.fieldQuantity}</FormLabel>
+            <FormControl>
+              <Input type="number" step="0.1" {...field} data-testid={isCreate ? "input-quantity" : "input-edit-quantity"} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )} />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <FormField control={form.control} name="moisture" render={({ field }) => (
+          <FormItem>
+            <FormLabel>{t.fieldMoisture}</FormLabel>
+            <FormControl>
+              <Input {...field} placeholder={isCreate ? "14%" : undefined} data-testid={isCreate ? "input-moisture" : "input-edit-moisture"} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )} />
+        <FormField control={form.control} name="bankAccount" render={({ field }) => (
+          <FormItem>
+            <FormLabel>{t.fieldBankAccount}</FormLabel>
+            <FormControl>
+              <Input {...field} placeholder={isCreate ? "XXXX 1234" : undefined} data-testid={isCreate ? "input-bank" : "input-edit-bank"} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )} />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <FormField control={form.control} name="cropGrade" render={({ field }) => (
+          <FormItem>
+            <FormLabel>{t.fieldCropGrade}</FormLabel>
+            <FormControl>
+              <Input {...field} value={field.value ?? ""} placeholder={t.cropGradePlaceholder} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )} />
+        <FormField control={form.control} name="harvestDate" render={({ field }) => (
+          <FormItem>
+            <FormLabel>{t.fieldHarvestDate}</FormLabel>
+            <FormControl>
+              <Input type="date" {...field} value={field.value ?? ""} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )} />
+      </div>
+
+      <FormField control={form.control} name="notes" render={({ field }) => (
+        <FormItem>
+          <FormLabel>{t.fieldNotes}</FormLabel>
+          <FormControl>
+            <Textarea {...field} value={field.value ?? ""} placeholder={t.notesPlaceholder} rows={2} className="resize-none" />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )} />
+
+      <FormField control={form.control} name="mediaUrls" render={({ field }) => (
+        <FormItem>
+          <FormLabel>{t.fieldMedia}</FormLabel>
+          <FormControl>
+            <MediaUploadSection
+              value={field.value ?? []}
+              onChange={field.onChange}
+            />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )} />
+    </div>
+  );
+}
+
+function EditFarmerDialog({ id, open, onOpenChange }: { id: number | null; open: boolean; onOpenChange: (open: boolean) => void }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { t } = useLanguage();
@@ -61,9 +323,12 @@ function EditFarmerDialog({ id, open, onOpenChange }: { id: number | null, open:
     }
   });
 
-  const form = useForm<z.infer<typeof farmerSchema>>({
+  const form = useForm<FarmerFormValues>({
     resolver: zodResolver(farmerSchema),
-    defaultValues: { name: "", village: "", crop: "Paddy", quantity: 0, moisture: "", bankAccount: "" },
+    defaultValues: {
+      name: "", village: "", crop: "Paddy", quantity: 0,
+      moisture: "", bankAccount: "", cropGrade: "", harvestDate: "", notes: "", mediaUrls: [],
+    },
   });
 
   useEffect(() => {
@@ -75,14 +340,26 @@ function EditFarmerDialog({ id, open, onOpenChange }: { id: number | null, open:
         quantity: farmer.quantity,
         moisture: farmer.moisture,
         bankAccount: farmer.bankAccount,
+        cropGrade: farmer.cropGrade ?? "",
+        harvestDate: farmer.harvestDate ?? "",
+        notes: farmer.notes ?? "",
+        mediaUrls: farmer.mediaUrls ?? [],
       });
     }
   }, [farmer, form, open]);
 
-  const onSubmit = (values: z.infer<typeof farmerSchema>) => {
+  const onSubmit = (values: FarmerFormValues) => {
     if (!id) return;
     updateFarmer.mutate(
-      { id, data: values },
+      {
+        id, data: {
+          ...values,
+          cropGrade: values.cropGrade || undefined,
+          harvestDate: values.harvestDate || undefined,
+          notes: values.notes || undefined,
+          mediaUrls: values.mediaUrls ?? [],
+        }
+      },
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListFarmersQueryKey() });
@@ -100,7 +377,7 @@ function EditFarmerDialog({ id, open, onOpenChange }: { id: number | null, open:
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[560px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{t.editRecord}</DialogTitle>
         </DialogHeader>
@@ -112,56 +389,9 @@ function EditFarmerDialog({ id, open, onOpenChange }: { id: number | null, open:
           </div>
         ) : (
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <FormField control={form.control} name="name" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t.fieldFarmerName}</FormLabel>
-                    <FormControl><Input {...field} data-testid="input-edit-name" /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <FormField control={form.control} name="village" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t.fieldVillage}</FormLabel>
-                    <FormControl><Input {...field} data-testid="input-edit-village" /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <FormField control={form.control} name="crop" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t.fieldCrop}</FormLabel>
-                    <FormControl><Input {...field} data-testid="input-edit-crop" /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <FormField control={form.control} name="quantity" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t.fieldQuantity}</FormLabel>
-                    <FormControl><Input type="number" step="0.1" {...field} data-testid="input-edit-quantity" /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <FormField control={form.control} name="moisture" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t.fieldMoisture}</FormLabel>
-                    <FormControl><Input {...field} data-testid="input-edit-moisture" /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <FormField control={form.control} name="bankAccount" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t.fieldBankAccount}</FormLabel>
-                    <FormControl><Input {...field} data-testid="input-edit-bank" /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-              </div>
-              <div className="pt-4 flex justify-end">
+            <form onSubmit={form.handleSubmit(onSubmit)}>
+              <FarmerFormFields form={form} />
+              <div className="pt-2 flex justify-end">
                 <Button type="submit" disabled={updateFarmer.isPending} data-testid="button-submit-edit-farmer">
                   {updateFarmer.isPending ? t.saving : t.updateRecord}
                 </Button>
@@ -169,6 +399,41 @@ function EditFarmerDialog({ id, open, onOpenChange }: { id: number | null, open:
             </form>
           </Form>
         )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function MediaViewDialog({ farmer, open, onOpenChange }: {
+  farmer: { name: string; mediaUrls: string[] };
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[640px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{farmer.name} — Media</DialogTitle>
+        </DialogHeader>
+        <div className="grid grid-cols-2 gap-3 py-2">
+          {farmer.mediaUrls.map((path) => (
+            <a key={path} href={`/api/storage${path}`} target="_blank" rel="noreferrer" className="block">
+              {isVideoPath(path) ? (
+                <video
+                  src={`/api/storage${path}`}
+                  controls
+                  className="w-full rounded-lg object-cover max-h-60"
+                />
+              ) : (
+                <img
+                  src={`/api/storage${path}`}
+                  alt="crop"
+                  className="w-full rounded-lg object-cover max-h-60"
+                />
+              )}
+            </a>
+          ))}
+        </div>
       </DialogContent>
     </Dialog>
   );
@@ -185,15 +450,27 @@ export default function FarmersPage() {
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [viewingMedia, setViewingMedia] = useState<{ name: string; mediaUrls: string[] } | null>(null);
 
-  const createForm = useForm<z.infer<typeof farmerSchema>>({
+  const createForm = useForm<FarmerFormValues>({
     resolver: zodResolver(farmerSchema),
-    defaultValues: { name: "", village: "", crop: "Paddy", quantity: 0, moisture: "", bankAccount: "" },
+    defaultValues: {
+      name: "", village: "", crop: "Paddy", quantity: 0,
+      moisture: "", bankAccount: "", cropGrade: "", harvestDate: "", notes: "", mediaUrls: [],
+    },
   });
 
-  const onCreateSubmit = (values: z.infer<typeof farmerSchema>) => {
+  const onCreateSubmit = (values: FarmerFormValues) => {
     createFarmer.mutate(
-      { data: values },
+      {
+        data: {
+          ...values,
+          cropGrade: values.cropGrade || undefined,
+          harvestDate: values.harvestDate || undefined,
+          notes: values.notes || undefined,
+          mediaUrls: values.mediaUrls ?? [],
+        }
+      },
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListFarmersQueryKey() });
@@ -258,61 +535,14 @@ export default function FarmersPage() {
               {t.addRecord}
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className="sm:max-w-[560px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{t.newRecord}</DialogTitle>
             </DialogHeader>
             <Form {...createForm}>
-              <form onSubmit={createForm.handleSubmit(onCreateSubmit)} className="space-y-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField control={createForm.control} name="name" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t.fieldFarmerName}</FormLabel>
-                      <FormControl><Input {...field} data-testid="input-name" placeholder="Ramu" /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={createForm.control} name="village" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t.fieldVillage}</FormLabel>
-                      <FormControl><Input {...field} data-testid="input-village" placeholder="Kondapur" /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField control={createForm.control} name="crop" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t.fieldCrop}</FormLabel>
-                      <FormControl><Input {...field} data-testid="input-crop" /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={createForm.control} name="quantity" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t.fieldQuantity}</FormLabel>
-                      <FormControl><Input type="number" step="0.1" {...field} data-testid="input-quantity" /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField control={createForm.control} name="moisture" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t.fieldMoisture}</FormLabel>
-                      <FormControl><Input {...field} data-testid="input-moisture" placeholder="14%" /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={createForm.control} name="bankAccount" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t.fieldBankAccount}</FormLabel>
-                      <FormControl><Input {...field} data-testid="input-bank" placeholder="XXXX 1234" /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                </div>
-                <div className="pt-4 flex justify-end">
+              <form onSubmit={createForm.handleSubmit(onCreateSubmit)}>
+                <FarmerFormFields form={createForm} isCreate />
+                <div className="pt-2 flex justify-end">
                   <Button type="submit" disabled={createFarmer.isPending} data-testid="button-submit-farmer">
                     {createFarmer.isPending ? t.saving : t.saveRecord}
                   </Button>
@@ -383,68 +613,109 @@ export default function FarmersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {farmers.map((farmer) => (
-                <TableRow key={farmer.id} data-testid={`row-farmer-${farmer.id}`}>
-                  <TableCell>
-                    <div className="font-semibold text-card-foreground">{farmer.name}</div>
-                    <div className="text-xs text-muted-foreground mt-1">{t.idLabel} {farmer.id}</div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="font-medium text-foreground">{farmer.village}</div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="font-medium text-foreground">{farmer.quantity} {t.qt}</div>
-                    <div className="flex gap-2 items-center text-xs mt-1">
-                      <span className="text-muted-foreground">{farmer.crop}</span>
-                      <span className="text-muted-foreground">&middot;</span>
-                      <span className="text-muted-foreground">{farmer.moisture} {t.moist}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-col gap-1 items-start">
-                      <Badge
-                        variant={farmer.paymentStatus === "Completed" ? "default" : "secondary"}
-                        className={farmer.paymentStatus === "Completed" ? "bg-green-600 hover:bg-green-700 text-white" : "bg-amber-100 text-amber-800 hover:bg-amber-200 border-transparent"}
-                      >
-                        {farmer.paymentStatus === "Completed" ? t.completed : t.pending}
-                      </Badge>
-                      <div className="text-xs text-muted-foreground">{farmer.bankAccount}</div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className={farmer.paymentStatus === "Pending" ? "text-green-600 border-green-200 hover:bg-green-50" : "text-amber-600 border-amber-200 hover:bg-amber-50"}
-                        onClick={() => handleTogglePayment(farmer.id, farmer.paymentStatus)}
-                        data-testid={`button-toggle-payment-${farmer.id}`}
-                      >
-                        {farmer.paymentStatus === "Pending" ? <CheckCircle2 className="w-4 h-4 mr-1" /> : <CircleDashed className="w-4 h-4 mr-1" />}
-                        {farmer.paymentStatus === "Pending" ? t.pay : t.revert}
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="text-muted-foreground hover:bg-muted"
-                        onClick={() => setEditingId(farmer.id)}
-                        data-testid={`button-edit-farmer-${farmer.id}`}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="text-destructive hover:bg-destructive/10"
-                        onClick={() => handleDelete(farmer.id)}
-                        data-testid={`button-delete-farmer-${farmer.id}`}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {farmers.map((farmer) => {
+                const hasMedia = farmer.mediaUrls && farmer.mediaUrls.length > 0;
+                const imageUrls = (farmer.mediaUrls ?? []).filter((p) => !isVideoPath(p));
+                const videoUrls = (farmer.mediaUrls ?? []).filter((p) => isVideoPath(p));
+
+                return (
+                  <TableRow key={farmer.id} data-testid={`row-farmer-${farmer.id}`}>
+                    <TableCell>
+                      <div className="font-semibold text-card-foreground">{farmer.name}</div>
+                      <div className="text-xs text-muted-foreground mt-1">{t.idLabel} {farmer.id}</div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="font-medium text-foreground">{farmer.village}</div>
+                      {farmer.harvestDate && (
+                        <div className="text-xs text-muted-foreground mt-1">{farmer.harvestDate}</div>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="font-medium text-foreground">{farmer.quantity} {t.qt}</div>
+                      <div className="flex flex-wrap gap-2 items-center text-xs mt-1">
+                        <span className="text-muted-foreground">{farmer.crop}</span>
+                        <span className="text-muted-foreground">&middot;</span>
+                        <span className="text-muted-foreground">{farmer.moisture} {t.moist}</span>
+                        {farmer.cropGrade && (
+                          <>
+                            <span className="text-muted-foreground">&middot;</span>
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
+                              {t.gradeLabel}: {farmer.cropGrade}
+                            </Badge>
+                          </>
+                        )}
+                      </div>
+                      {farmer.notes && (
+                        <div className="text-xs text-muted-foreground mt-1 italic line-clamp-1">{farmer.notes}</div>
+                      )}
+                      {hasMedia && (
+                        <button
+                          type="button"
+                          onClick={() => setViewingMedia({ name: farmer.name, mediaUrls: farmer.mediaUrls ?? [] })}
+                          className="flex items-center gap-1 mt-1.5 text-xs text-primary hover:underline"
+                        >
+                          {imageUrls.length > 0 && (
+                            <span className="flex items-center gap-0.5">
+                              <ImageIcon className="w-3 h-3" />
+                              {imageUrls.length}
+                            </span>
+                          )}
+                          {videoUrls.length > 0 && (
+                            <span className="flex items-center gap-0.5 ml-1">
+                              <Video className="w-3 h-3" />
+                              {videoUrls.length}
+                            </span>
+                          )}
+                          <span className="ml-0.5">{t.viewMedia}</span>
+                        </button>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1 items-start">
+                        <Badge
+                          variant={farmer.paymentStatus === "Completed" ? "default" : "secondary"}
+                          className={farmer.paymentStatus === "Completed" ? "bg-green-600 hover:bg-green-700 text-white" : "bg-amber-100 text-amber-800 hover:bg-amber-200 border-transparent"}
+                        >
+                          {farmer.paymentStatus === "Completed" ? t.completed : t.pending}
+                        </Badge>
+                        <div className="text-xs text-muted-foreground">{farmer.bankAccount}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className={farmer.paymentStatus === "Pending" ? "text-green-600 border-green-200 hover:bg-green-50" : "text-amber-600 border-amber-200 hover:bg-amber-50"}
+                          onClick={() => handleTogglePayment(farmer.id, farmer.paymentStatus)}
+                          data-testid={`button-toggle-payment-${farmer.id}`}
+                        >
+                          {farmer.paymentStatus === "Pending" ? <CheckCircle2 className="w-4 h-4 mr-1" /> : <CircleDashed className="w-4 h-4 mr-1" />}
+                          {farmer.paymentStatus === "Pending" ? t.pay : t.revert}
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="text-muted-foreground hover:bg-muted"
+                          onClick={() => setEditingId(farmer.id)}
+                          data-testid={`button-edit-farmer-${farmer.id}`}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="text-destructive hover:bg-destructive/10"
+                          onClick={() => handleDelete(farmer.id)}
+                          data-testid={`button-delete-farmer-${farmer.id}`}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         ) : (
@@ -460,6 +731,14 @@ export default function FarmersPage() {
         open={editingId !== null}
         onOpenChange={(open) => !open && setEditingId(null)}
       />
+
+      {viewingMedia && (
+        <MediaViewDialog
+          farmer={viewingMedia}
+          open={!!viewingMedia}
+          onOpenChange={(open) => !open && setViewingMedia(null)}
+        />
+      )}
     </div>
   );
 }

@@ -19,4 +19,8 @@ export interface FarmerInput {
   moisture: string;
   /** @minLength 1 */
   bankAccount: string;
+  cropGrade?: string;
+  harvestDate?: string;
+  notes?: string;
+  mediaUrls?: string[];
 }

@@ -13,4 +13,8 @@ export interface FarmerUpdate {
   quantity?: number;
   moisture?: string;
   bankAccount?: string;
+  cropGrade?: string;
+  harvestDate?: string;
+  notes?: string;
+  mediaUrls?: string[];
 }
