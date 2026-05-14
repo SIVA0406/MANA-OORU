@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, Users, Sprout } from "lucide-react";
+import { LayoutDashboard, Users, Sprout, Languages } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -9,11 +9,15 @@ import {
   SidebarMenuButton,
   SidebarProvider,
   SidebarTrigger,
-  SidebarInset
+  SidebarInset,
+  SidebarFooter,
 } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/lib/language";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
+  const { t, toggleLanguage } = useLanguage();
 
   return (
     <SidebarProvider>
@@ -22,43 +26,56 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <SidebarHeader className="p-4 flex items-center border-b border-border">
             <div className="flex items-center gap-2 font-bold text-lg text-sidebar-foreground w-full px-2">
               <Sprout className="w-6 h-6 text-primary" />
-              <span>Mana Ooru</span>
+              <span>{t.appName}</span>
             </div>
           </SidebarHeader>
+
           <SidebarContent className="px-2 py-4">
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton 
-                  asChild 
+                <SidebarMenuButton
+                  asChild
                   isActive={location === "/" || location === "/farmers"}
                   className="font-medium"
                 >
                   <Link href="/" data-testid="link-farmers">
                     <Users className="w-5 h-5" />
-                    <span>Procurement</span>
+                    <span>{t.navProcurement}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton 
-                  asChild 
+                <SidebarMenuButton
+                  asChild
                   isActive={location === "/dashboard"}
                   className="font-medium"
                 >
                   <Link href="/dashboard" data-testid="link-dashboard">
                     <LayoutDashboard className="w-5 h-5" />
-                    <span>Dashboard</span>
+                    <span>{t.navDashboard}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarContent>
+
+          <SidebarFooter className="p-3 border-t border-border">
+            <Button
+              variant="outline"
+              className="w-full justify-start gap-2 font-medium text-sm"
+              onClick={toggleLanguage}
+              data-testid="button-toggle-language"
+            >
+              <Languages className="w-4 h-4" />
+              {t.langToggle}
+            </Button>
+          </SidebarFooter>
         </Sidebar>
 
         <SidebarInset className="flex-1 flex flex-col bg-background relative overflow-hidden">
           <header className="h-16 flex items-center px-6 border-b bg-card border-border gap-4 sticky top-0 z-10">
             <SidebarTrigger />
-            <div className="font-semibold text-lg ml-2">Smart Village Crop Procurement</div>
+            <div className="font-semibold text-lg ml-2">{t.appSubtitle}</div>
           </header>
           <main className="flex-1 p-6 overflow-auto">
             <div className="max-w-6xl mx-auto w-full">
