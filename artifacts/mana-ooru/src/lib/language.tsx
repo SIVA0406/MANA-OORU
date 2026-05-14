@@ -88,6 +88,16 @@ const translations = {
     summaryPending: "Pending Payments",
     summaryCompleted: "Completed Payments",
 
+    logout: "Log Out",
+
+    loginTitle: "Welcome Back",
+    loginSubtitle: "Sign in to access the procurement platform.",
+    loginButton: "Log In",
+    loginHint: "Secure login powered by your account.",
+    loginFeature1: "Track Farmers",
+    loginFeature2: "Payments",
+    loginFeature3: "Analytics",
+
     setupTitle: "Welcome, Buyer!",
     setupSubtitle: "Tell us about yourself to get started.",
     welcomeBack: "Welcome back,",
@@ -187,6 +197,16 @@ const translations = {
     summaryQuantity: "మొత్తం పరిమాణం",
     summaryPending: "పెండింగ్ చెల్లింపులు",
     summaryCompleted: "పూర్తయిన చెల్లింపులు",
+
+    logout: "లాగ్ అవుట్",
+
+    loginTitle: "స్వాగతం",
+    loginSubtitle: "కొనుగోలు వేదికను యాక్సెస్ చేయడానికి లాగిన్ చేయండి.",
+    loginButton: "లాగిన్",
+    loginHint: "మీ ఖాతాతో సురక్షిత లాగిన్.",
+    loginFeature1: "రైతుల ట్రాకింగ్",
+    loginFeature2: "చెల్లింపులు",
+    loginFeature3: "విశ్లేషణలు",
 
     setupTitle: "స్వాగతం, బయ్యర్!",
     setupSubtitle: "ప్రారంభించడానికి మీ గురించి చెప్పండి.",

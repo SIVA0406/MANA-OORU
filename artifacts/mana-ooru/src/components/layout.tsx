@@ -1,5 +1,6 @@
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, Users, Sprout, Languages, Pencil } from "lucide-react";
+import { LayoutDashboard, Users, Sprout, Languages, Pencil, LogOut } from "lucide-react";
+import { useAuth } from "@workspace/replit-auth-web";
 import {
   Sidebar,
   SidebarContent,
@@ -22,6 +23,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const { t, toggleLanguage } = useLanguage();
   const { profile } = useBuyerProfile();
+  const { logout } = useAuth();
   const [editingProfile, setEditingProfile] = useState(false);
 
   return (
@@ -100,6 +102,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             >
               <Languages className="w-4 h-4" />
               {t.langToggle}
+            </Button>
+
+            <Button
+              variant="ghost"
+              className="w-full justify-start gap-2 font-medium text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+              onClick={logout}
+            >
+              <LogOut className="w-4 h-4" />
+              {t.logout}
             </Button>
           </SidebarFooter>
         </Sidebar>

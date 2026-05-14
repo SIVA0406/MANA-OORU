@@ -6,10 +6,12 @@ import NotFound from "@/pages/not-found";
 import { AppLayout } from "@/components/layout";
 import FarmersPage from "@/pages/farmers";
 import DashboardPage from "@/pages/dashboard";
+import LoginPage from "@/pages/login";
 import { LanguageProvider } from "@/lib/language";
 import { BuyerProfileProvider, useBuyerProfile } from "@/lib/buyer-profile";
 import { BuyerSetupModal } from "@/components/buyer-setup-modal";
 import { WelcomeSplash } from "@/components/welcome-splash";
+import { useAuth } from "@workspace/replit-auth-web";
 import { useState } from "react";
 
 const queryClient = new QueryClient();
@@ -44,19 +46,39 @@ function AppWithProfile() {
   );
 }
 
+function AuthGate() {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-green-900">
+        <div className="w-8 h-8 border-4 border-green-400 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginPage />;
+  }
+
+  return (
+    <BuyerProfileProvider>
+      <AppWithProfile />
+    </BuyerProfileProvider>
+  );
+}
+
 function App() {
   return (
     <LanguageProvider>
-      <BuyerProfileProvider>
-        <QueryClientProvider client={queryClient}>
-          <TooltipProvider>
-            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-              <AppWithProfile />
-            </WouterRouter>
-            <Toaster />
-          </TooltipProvider>
-        </QueryClientProvider>
-      </BuyerProfileProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <AuthGate />
+          </WouterRouter>
+          <Toaster />
+        </TooltipProvider>
+      </QueryClientProvider>
     </LanguageProvider>
   );
 }
