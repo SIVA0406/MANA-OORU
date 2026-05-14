@@ -35,7 +35,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Trash2, CheckCircle2, CircleDashed, Plus, Edit } from "lucide-react";
+import { Trash2, CheckCircle2, CircleDashed, Plus, Edit, Users, Wheat, IndianRupee } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLanguage } from "@/lib/language";
 
@@ -238,6 +238,11 @@ export default function FarmersPage() {
     );
   };
 
+  const totalQuantity = farmers ? farmers.reduce((sum, f) => sum + f.quantity, 0) : 0;
+  const totalFarmers = farmers ? farmers.length : 0;
+  const pendingCount = farmers ? farmers.filter((f) => f.paymentStatus === "Pending").length : 0;
+  const completedCount = farmers ? farmers.filter((f) => f.paymentStatus === "Completed").length : 0;
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center bg-card p-6 rounded-xl border shadow-sm">
@@ -316,6 +321,47 @@ export default function FarmersPage() {
             </Form>
           </DialogContent>
         </Dialog>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-card border rounded-xl shadow-sm p-4 flex items-center gap-3" data-testid="summary-farmers">
+          <div className="bg-primary/10 p-2 rounded-lg">
+            <Users className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">{t.summaryFarmers}</p>
+            <p className="text-2xl font-bold text-foreground">{isLoading ? "—" : totalFarmers}</p>
+          </div>
+        </div>
+        <div className="bg-card border rounded-xl shadow-sm p-4 flex items-center gap-3" data-testid="summary-quantity">
+          <div className="bg-amber-100 p-2 rounded-lg">
+            <Wheat className="w-5 h-5 text-amber-600" />
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">{t.summaryQuantity}</p>
+            <p className="text-2xl font-bold text-foreground">
+              {isLoading ? "—" : totalQuantity} <span className="text-sm font-normal text-muted-foreground">{t.qt}</span>
+            </p>
+          </div>
+        </div>
+        <div className="bg-card border rounded-xl shadow-sm p-4 flex items-center gap-3" data-testid="summary-pending">
+          <div className="bg-amber-100 p-2 rounded-lg">
+            <IndianRupee className="w-5 h-5 text-amber-600" />
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">{t.summaryPending}</p>
+            <p className="text-2xl font-bold text-amber-700">{isLoading ? "—" : pendingCount}</p>
+          </div>
+        </div>
+        <div className="bg-card border rounded-xl shadow-sm p-4 flex items-center gap-3" data-testid="summary-completed">
+          <div className="bg-green-100 p-2 rounded-lg">
+            <IndianRupee className="w-5 h-5 text-green-600" />
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">{t.summaryCompleted}</p>
+            <p className="text-2xl font-bold text-green-700">{isLoading ? "—" : completedCount}</p>
+          </div>
+        </div>
       </div>
 
       <div className="bg-card border rounded-xl shadow-sm overflow-hidden">

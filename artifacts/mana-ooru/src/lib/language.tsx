@@ -68,6 +68,11 @@ const translations = {
     noVillages: "No villages recorded.",
     noCrops: "No crops recorded.",
 
+    summaryFarmers: "Total Farmers",
+    summaryQuantity: "Total Quantity",
+    summaryPending: "Pending Payments",
+    summaryCompleted: "Completed Payments",
+
     langToggle: "తెలుగు",
   },
   te: {
@@ -134,6 +139,11 @@ const translations = {
     cropsHandled: "నిర్వహించిన పంటలు",
     noVillages: "గ్రామాలు నమోదు కాలేదు.",
     noCrops: "పంటలు నమోదు కాలేదు.",
+
+    summaryFarmers: "మొత్తం రైతులు",
+    summaryQuantity: "మొత్తం పరిమాణం",
+    summaryPending: "పెండింగ్ చెల్లింపులు",
+    summaryCompleted: "పూర్తయిన చెల్లింపులు",
 
     langToggle: "English",
   },
