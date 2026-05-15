@@ -85,6 +85,45 @@ paths:
         '302':
           description: Redirect to the OIDC provider logout URL.
 
+  /otp/send:
+    post:
+      tags: [Auth]
+      operationId: sendOtp
+      summary: Send OTP to a mobile number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OtpSendBody'
+      responses:
+        '200':
+          description: OTP sent successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OtpSendResponse'
+  /otp/verify:
+    post:
+      tags: [Auth]
+      operationId: verifyOtp
+      summary: Verify an OTP for a mobile number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OtpVerifyBody'
+      responses:
+        '200':
+          description: OTP verified successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OtpVerifyResponse'
+        '400':
+          description: Invalid or expired OTP.
+
   /healthz:
     get:
       operationId: healthCheck
@@ -357,6 +396,39 @@ components:
           oneOf:
             - $ref: '#/components/schemas/AuthUser'
             - type: 'null'
+    OtpSendBody:
+      type: object
+      required: [mobile]
+      properties:
+        mobile:
+          type: string
+          minLength: 10
+          maxLength: 15
+    OtpSendResponse:
+      type: object
+      required: [success]
+      properties:
+        success:
+          type: boolean
+        devOtp:
+          type: string
+          description: "Only present in development — the OTP for testing."
+    OtpVerifyBody:
+      type: object
+      required: [mobile, otp]
+      properties:
+        mobile:
+          type: string
+        otp:
+          type: string
+          minLength: 6
+          maxLength: 6
+    OtpVerifyResponse:
+      type: object
+      required: [success]
+      properties:
+        success:
+          type: boolean
     LogoutSuccess:
       type: object
       required: [success]

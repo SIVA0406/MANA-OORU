@@ -6,6 +6,7 @@ import NotFound from "@/pages/not-found";
 import { AppLayout } from "@/components/layout";
 import FarmersPage from "@/pages/farmers";
 import DashboardPage from "@/pages/dashboard";
+import FarmerSubmitPage from "@/pages/farmer-submit";
 import LoginPage from "@/pages/login";
 import { LanguageProvider } from "@/lib/language";
 import { BuyerProfileProvider, useBuyerProfile } from "@/lib/buyer-profile";
@@ -16,13 +17,25 @@ import { useState, useEffect } from "react";
 
 const queryClient = new QueryClient();
 
-function Router() {
+function BuyerRouter() {
   return (
     <AppLayout>
       <Switch>
-        <Route path="/" component={FarmersPage} />
+        <Route path="/" component={DashboardPage} />
         <Route path="/farmers" component={FarmersPage} />
         <Route path="/dashboard" component={DashboardPage} />
+        <Route component={NotFound} />
+      </Switch>
+    </AppLayout>
+  );
+}
+
+function FarmerRouter() {
+  return (
+    <AppLayout>
+      <Switch>
+        <Route path="/" component={FarmerSubmitPage} />
+        <Route path="/submit" component={FarmerSubmitPage} />
         <Route component={NotFound} />
       </Switch>
     </AppLayout>
@@ -36,10 +49,8 @@ function AppWithProfile() {
   const [, navigate] = useLocation();
 
   useEffect(() => {
-    if (profile && setupComplete) {
-      if (profile.role === "buyer") {
-        navigate("/dashboard");
-      }
+    if (profile && setupComplete && profile.role === "buyer") {
+      navigate("/dashboard");
     }
   }, [setupComplete, profile]);
 
@@ -47,12 +58,11 @@ function AppWithProfile() {
     return <BuyerSetupModal onDone={() => setSetupComplete(true)} />;
   }
 
-  return (
-    <>
-      {!splashDone && <WelcomeSplash onDone={() => setSplashDone(true)} />}
-      <Router />
-    </>
-  );
+  if (!splashDone) {
+    return <WelcomeSplash onDone={() => setSplashDone(true)} />;
+  }
+
+  return profile?.role === "farmer" ? <FarmerRouter /> : <BuyerRouter />;
 }
 
 function AuthGate() {

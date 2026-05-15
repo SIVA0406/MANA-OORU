@@ -21,6 +21,33 @@ export interface AuthUserEnvelope {
   user: AuthUser | null;
 }
 
+export interface OtpSendBody {
+  /**
+   * @minLength 10
+   * @maxLength 15
+   */
+  mobile: string;
+}
+
+export interface OtpSendResponse {
+  success: boolean;
+  /** Only present in development — the OTP for testing. */
+  devOtp?: string;
+}
+
+export interface OtpVerifyBody {
+  mobile: string;
+  /**
+   * @minLength 6
+   * @maxLength 6
+   */
+  otp: string;
+}
+
+export interface OtpVerifyResponse {
+  success: boolean;
+}
+
 export const LogoutSuccessValue = {
   success: true,
 } as const;

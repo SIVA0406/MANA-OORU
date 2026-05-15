@@ -57,6 +57,39 @@ export const LogoutBrowserSessionHeader = zod.object({
 });
 
 /**
+ * @summary Send OTP to a mobile number
+ */
+export const sendOtpBodyMobileMin = 10;
+export const sendOtpBodyMobileMax = 15;
+
+export const SendOtpBody = zod.object({
+  mobile: zod.string().min(sendOtpBodyMobileMin).max(sendOtpBodyMobileMax),
+});
+
+export const SendOtpResponse = zod.object({
+  success: zod.boolean(),
+  devOtp: zod
+    .string()
+    .optional()
+    .describe("Only present in development — the OTP for testing."),
+});
+
+/**
+ * @summary Verify an OTP for a mobile number
+ */
+export const verifyOtpBodyOtpMin = 6;
+export const verifyOtpBodyOtpMax = 6;
+
+export const VerifyOtpBody = zod.object({
+  mobile: zod.string(),
+  otp: zod.string().min(verifyOtpBodyOtpMin).max(verifyOtpBodyOtpMax),
+});
+
+export const VerifyOtpResponse = zod.object({
+  success: zod.boolean(),
+});
+
+/**
  * Returns server health status
  * @summary Health check
  */

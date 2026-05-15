@@ -1,0 +1,14 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "RihmLvxhme68z34OtVdwc"
+uri = "file://artifacts/mana-ooru/src/assets/role-farmer.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "SpHbvn8X8XAdv9gfqH_W9"
+uri = "file://artifacts/mana-ooru/src/assets/role-buyer.png"
+type = "image"
+title = "generated_image"

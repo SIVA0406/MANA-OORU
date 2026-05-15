@@ -47,6 +47,7 @@ router.post("/farmers", async (req, res): Promise<void> => {
     notes: parsed.data.notes ?? null,
     profilePhotoUrl: parsed.data.profilePhotoUrl ?? null,
     mediaUrls: parsed.data.mediaUrls ?? [],
+    cropStatus: parsed.data.cropStatus ?? null,
   }).returning();
 
   res.status(201).json(serializeFarmer(farmer));
@@ -94,6 +95,7 @@ router.patch("/farmers/:id", async (req, res): Promise<void> => {
   if (parsed.data.notes !== undefined) updateData.notes = parsed.data.notes;
   if (parsed.data.profilePhotoUrl !== undefined) updateData.profilePhotoUrl = parsed.data.profilePhotoUrl;
   if (parsed.data.mediaUrls !== undefined) updateData.mediaUrls = parsed.data.mediaUrls;
+  if (parsed.data.cropStatus !== undefined) updateData.cropStatus = parsed.data.cropStatus;
 
   const [farmer] = await db.update(farmersTable).set(updateData).where(eq(farmersTable.id, params.data.id)).returning();
 
