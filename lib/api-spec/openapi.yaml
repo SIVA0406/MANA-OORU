@@ -405,6 +405,9 @@ components:
           type: array
           items:
             type: string
+        cropStatus:
+          type: ["string", "null"]
+          enum: ["On Hold", "Partially Sold", "Fully Sold", "Sold Out", null]
         createdAt:
           type: string
 
@@ -442,6 +445,9 @@ components:
           type: array
           items:
             type: string
+        cropStatus:
+          type: string
+          enum: ["On Hold", "Partially Sold", "Fully Sold", "Sold Out"]
 
     FarmerUpdate:
       type: object
@@ -470,6 +476,9 @@ components:
           type: array
           items:
             type: string
+        cropStatus:
+          type: string
+          enum: ["On Hold", "Partially Sold", "Fully Sold", "Sold Out"]
 
     PaymentStatusUpdate:
       type: object

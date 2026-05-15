@@ -81,6 +81,15 @@ export const ListFarmersResponseItem = zod.object({
   notes: zod.string().nullish(),
   profilePhotoUrl: zod.string().nullish(),
   mediaUrls: zod.array(zod.string()),
+  cropStatus: zod
+    .union([
+      zod.literal("On Hold"),
+      zod.literal("Partially Sold"),
+      zod.literal("Fully Sold"),
+      zod.literal("Sold Out"),
+      zod.literal(null),
+    ])
+    .nullish(),
   createdAt: zod.string(),
 });
 export const ListFarmersResponse = zod.array(ListFarmersResponseItem);
@@ -101,6 +110,9 @@ export const CreateFarmerBody = zod.object({
   notes: zod.string().optional(),
   profilePhotoUrl: zod.string().optional(),
   mediaUrls: zod.array(zod.string()).optional(),
+  cropStatus: zod
+    .enum(["On Hold", "Partially Sold", "Fully Sold", "Sold Out"])
+    .optional(),
 });
 
 /**
@@ -124,6 +136,15 @@ export const GetFarmerResponse = zod.object({
   notes: zod.string().nullish(),
   profilePhotoUrl: zod.string().nullish(),
   mediaUrls: zod.array(zod.string()),
+  cropStatus: zod
+    .union([
+      zod.literal("On Hold"),
+      zod.literal("Partially Sold"),
+      zod.literal("Fully Sold"),
+      zod.literal("Sold Out"),
+      zod.literal(null),
+    ])
+    .nullish(),
   createdAt: zod.string(),
 });
 
@@ -146,6 +167,9 @@ export const UpdateFarmerBody = zod.object({
   notes: zod.string().optional(),
   profilePhotoUrl: zod.string().optional(),
   mediaUrls: zod.array(zod.string()).optional(),
+  cropStatus: zod
+    .enum(["On Hold", "Partially Sold", "Fully Sold", "Sold Out"])
+    .optional(),
 });
 
 export const UpdateFarmerResponse = zod.object({
@@ -162,6 +186,15 @@ export const UpdateFarmerResponse = zod.object({
   notes: zod.string().nullish(),
   profilePhotoUrl: zod.string().nullish(),
   mediaUrls: zod.array(zod.string()),
+  cropStatus: zod
+    .union([
+      zod.literal("On Hold"),
+      zod.literal("Partially Sold"),
+      zod.literal("Fully Sold"),
+      zod.literal("Sold Out"),
+      zod.literal(null),
+    ])
+    .nullish(),
   createdAt: zod.string(),
 });
 
@@ -197,6 +230,15 @@ export const UpdatePaymentStatusResponse = zod.object({
   notes: zod.string().nullish(),
   profilePhotoUrl: zod.string().nullish(),
   mediaUrls: zod.array(zod.string()),
+  cropStatus: zod
+    .union([
+      zod.literal("On Hold"),
+      zod.literal("Partially Sold"),
+      zod.literal("Fully Sold"),
+      zod.literal("Sold Out"),
+      zod.literal(null),
+    ])
+    .nullish(),
   createdAt: zod.string(),
 });
 

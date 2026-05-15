@@ -1,5 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useRef } from "react";
+import { useSearch, useLocation } from "wouter";
 import {
   useListFarmers,
   useCreateFarmer,
@@ -11,7 +12,7 @@ import {
   getGetDashboardSummaryQueryKey,
   getGetFarmerQueryKey
 } from "@workspace/api-client-react";
-import type { PaymentStatusUpdate } from "@workspace/api-client-react";
+import type { PaymentStatusUpdate, FarmerInputCropStatus, FarmerUpdateCropStatus } from "@workspace/api-client-react";
 import {
   Table,
   TableBody,
@@ -29,6 +30,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -38,10 +46,14 @@ import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import {
   Trash2, CheckCircle2, CircleDashed, Plus, Edit,
-  Users, Wheat, IndianRupee, Camera, Video, X, ImageIcon, Loader2, UserCircle2
+  Users, Wheat, IndianRupee, Camera, Video, X, ImageIcon, Loader2, UserCircle2,
+  Filter, XCircle
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLanguage } from "@/lib/language";
+
+const CROP_STATUSES = ["On Hold", "Partially Sold", "Fully Sold", "Sold Out"] as const;
+type CropStatus = typeof CROP_STATUSES[number];
 
 const farmerSchema = z.object({
   name: z.string().min(1),
@@ -55,12 +67,23 @@ const farmerSchema = z.object({
   notes: z.string().optional(),
   profilePhotoUrl: z.string().optional(),
   mediaUrls: z.array(z.string()).optional(),
+  cropStatus: z.string().optional(),
 });
 
 type FarmerFormValues = z.infer<typeof farmerSchema>;
 
 function isVideoPath(path: string) {
   return /\.(mp4|mov|avi|webm|mkv)$/i.test(path) || path.includes("video");
+}
+
+function getCropStatusStyle(status: string | null | undefined): { bg: string; text: string; label: string } {
+  switch (status) {
+    case "On Hold": return { bg: "bg-yellow-100 text-yellow-800 border-yellow-200", text: "text-yellow-800", label: "On Hold" };
+    case "Partially Sold": return { bg: "bg-blue-100 text-blue-800 border-blue-200", text: "text-blue-800", label: "Partially Sold" };
+    case "Fully Sold": return { bg: "bg-green-100 text-green-800 border-green-200", text: "text-green-800", label: "Fully Sold" };
+    case "Sold Out": return { bg: "bg-gray-100 text-gray-600 border-gray-200", text: "text-gray-600", label: "Sold Out" };
+    default: return { bg: "bg-muted text-muted-foreground border-transparent", text: "text-muted-foreground", label: "—" };
+  }
 }
 
 function MediaPreview({ objectPath, className = "" }: { objectPath: string; className?: string }) {
@@ -375,6 +398,30 @@ function FarmerFormFields({
         )} />
       </div>
 
+      <FormField control={form.control} name="cropStatus" render={({ field }) => (
+        <FormItem>
+          <FormLabel>{t.cropStatusLabel}</FormLabel>
+          <Select
+            value={field.value ?? ""}
+            onValueChange={(v) => field.onChange(v === "none" ? "" : v)}
+          >
+            <FormControl>
+              <SelectTrigger>
+                <SelectValue placeholder={t.cropStatusNone} />
+              </SelectTrigger>
+            </FormControl>
+            <SelectContent>
+              <SelectItem value="none">{t.cropStatusNone}</SelectItem>
+              <SelectItem value="On Hold">{t.cropStatusOnHold}</SelectItem>
+              <SelectItem value="Partially Sold">{t.cropStatusPartiallySold}</SelectItem>
+              <SelectItem value="Fully Sold">{t.cropStatusFullySold}</SelectItem>
+              <SelectItem value="Sold Out">{t.cropStatusSoldOut}</SelectItem>
+            </SelectContent>
+          </Select>
+          <FormMessage />
+        </FormItem>
+      )} />
+
       <FormField control={form.control} name="notes" render={({ field }) => (
         <FormItem>
           <FormLabel>{t.fieldNotes}</FormLabel>
@@ -418,7 +465,7 @@ function EditFarmerDialog({ id, open, onOpenChange }: { id: number | null; open:
     resolver: zodResolver(farmerSchema),
     defaultValues: {
       name: "", village: "", crop: "Paddy", quantity: 0,
-      moisture: "", bankAccount: "", cropGrade: "", harvestDate: "", notes: "", profilePhotoUrl: "", mediaUrls: [],
+      moisture: "", bankAccount: "", cropGrade: "", harvestDate: "", notes: "", profilePhotoUrl: "", mediaUrls: [], cropStatus: "",
     },
   });
 
@@ -436,6 +483,7 @@ function EditFarmerDialog({ id, open, onOpenChange }: { id: number | null; open:
         notes: farmer.notes ?? "",
         profilePhotoUrl: farmer.profilePhotoUrl ?? "",
         mediaUrls: farmer.mediaUrls ?? [],
+        cropStatus: farmer.cropStatus ?? "",
       });
     }
   }, [farmer, form, open]);
@@ -450,6 +498,7 @@ function EditFarmerDialog({ id, open, onOpenChange }: { id: number | null; open:
           harvestDate: values.harvestDate || undefined,
           notes: values.notes || undefined,
           mediaUrls: values.mediaUrls ?? [],
+          cropStatus: (values.cropStatus || undefined) as FarmerUpdateCropStatus | undefined,
         }
       },
       {
@@ -539,16 +588,45 @@ export default function FarmersPage() {
   const createFarmer = useCreateFarmer();
   const deleteFarmer = useDeleteFarmer();
   const updatePayment = useUpdatePaymentStatus();
+  const search = useSearch();
+  const [, navigate] = useLocation();
+
+  const params = new URLSearchParams(search);
+  const filterParam = params.get("filter") ?? "all";
+  const villageParam = params.get("village");
+  const cropParam = params.get("crop");
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [viewingMedia, setViewingMedia] = useState<{ name: string; mediaUrls: string[] } | null>(null);
 
+  const filteredFarmers = farmers
+    ? farmers.filter((f) => {
+        if (filterParam === "pending" && f.paymentStatus !== "Pending") return false;
+        if (filterParam === "completed" && f.paymentStatus !== "Completed") return false;
+        if (villageParam && f.village !== villageParam) return false;
+        if (cropParam && f.crop !== cropParam) return false;
+        return true;
+      })
+    : [];
+
+  const clearFilter = () => navigate("/farmers");
+
+  const hasActiveFilter = filterParam !== "all" || !!villageParam || !!cropParam;
+
+  const getFilterLabel = () => {
+    if (villageParam) return `${t.filterByVillage}: ${villageParam}`;
+    if (cropParam) return `${t.filterByCrop}: ${cropParam}`;
+    if (filterParam === "pending") return t.filterPending;
+    if (filterParam === "completed") return t.filterCompleted;
+    return t.filterAll;
+  };
+
   const createForm = useForm<FarmerFormValues>({
     resolver: zodResolver(farmerSchema),
     defaultValues: {
       name: "", village: "", crop: "Paddy", quantity: 0,
-      moisture: "", bankAccount: "", cropGrade: "", harvestDate: "", notes: "", profilePhotoUrl: "", mediaUrls: [],
+      moisture: "", bankAccount: "", cropGrade: "", harvestDate: "", notes: "", profilePhotoUrl: "", mediaUrls: [], cropStatus: "",
     },
   });
 
@@ -562,6 +640,7 @@ export default function FarmersPage() {
           notes: values.notes || undefined,
           profilePhotoUrl: values.profilePhotoUrl || undefined,
           mediaUrls: values.mediaUrls ?? [],
+          cropStatus: (values.cropStatus || undefined) as FarmerInputCropStatus | undefined,
         }
       },
       {
@@ -647,17 +726,28 @@ export default function FarmersPage() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-card border rounded-xl shadow-sm p-4 flex items-center gap-3" data-testid="summary-farmers">
-          <div className="bg-primary/10 p-2 rounded-lg">
+        <button
+          type="button"
+          onClick={() => navigate("/farmers?filter=all")}
+          className={`bg-card border rounded-xl shadow-sm p-4 flex items-center gap-3 text-left hover:border-primary/50 hover:shadow-md transition-all ${filterParam === "all" && !villageParam && !cropParam ? "border-primary/40 ring-1 ring-primary/20" : ""}`}
+          data-testid="summary-farmers"
+        >
+          <div className="bg-primary/10 p-2 rounded-lg shrink-0">
             <Users className="w-5 h-5 text-primary" />
           </div>
           <div>
             <p className="text-xs text-muted-foreground">{t.summaryFarmers}</p>
             <p className="text-2xl font-bold text-foreground">{isLoading ? "—" : totalFarmers}</p>
           </div>
-        </div>
-        <div className="bg-card border rounded-xl shadow-sm p-4 flex items-center gap-3" data-testid="summary-quantity">
-          <div className="bg-amber-100 p-2 rounded-lg">
+        </button>
+
+        <button
+          type="button"
+          onClick={() => navigate("/farmers?filter=all")}
+          className="bg-card border rounded-xl shadow-sm p-4 flex items-center gap-3 text-left hover:border-amber-400/50 hover:shadow-md transition-all"
+          data-testid="summary-quantity"
+        >
+          <div className="bg-amber-100 p-2 rounded-lg shrink-0">
             <Wheat className="w-5 h-5 text-amber-600" />
           </div>
           <div>
@@ -666,26 +756,54 @@ export default function FarmersPage() {
               {isLoading ? "—" : totalQuantity} <span className="text-sm font-normal text-muted-foreground">{t.qt}</span>
             </p>
           </div>
-        </div>
-        <div className="bg-card border rounded-xl shadow-sm p-4 flex items-center gap-3" data-testid="summary-pending">
-          <div className="bg-amber-100 p-2 rounded-lg">
+        </button>
+
+        <button
+          type="button"
+          onClick={() => navigate("/farmers?filter=pending")}
+          className={`bg-card border rounded-xl shadow-sm p-4 flex items-center gap-3 text-left hover:border-amber-400/50 hover:shadow-md transition-all ${filterParam === "pending" ? "border-amber-400/60 ring-1 ring-amber-300/30" : ""}`}
+          data-testid="summary-pending"
+        >
+          <div className="bg-amber-100 p-2 rounded-lg shrink-0">
             <IndianRupee className="w-5 h-5 text-amber-600" />
           </div>
           <div>
             <p className="text-xs text-muted-foreground">{t.summaryPending}</p>
             <p className="text-2xl font-bold text-amber-700">{isLoading ? "—" : pendingCount}</p>
           </div>
-        </div>
-        <div className="bg-card border rounded-xl shadow-sm p-4 flex items-center gap-3" data-testid="summary-completed">
-          <div className="bg-green-100 p-2 rounded-lg">
+        </button>
+
+        <button
+          type="button"
+          onClick={() => navigate("/farmers?filter=completed")}
+          className={`bg-card border rounded-xl shadow-sm p-4 flex items-center gap-3 text-left hover:border-green-400/50 hover:shadow-md transition-all ${filterParam === "completed" ? "border-green-400/60 ring-1 ring-green-300/30" : ""}`}
+          data-testid="summary-completed"
+        >
+          <div className="bg-green-100 p-2 rounded-lg shrink-0">
             <IndianRupee className="w-5 h-5 text-green-600" />
           </div>
           <div>
             <p className="text-xs text-muted-foreground">{t.summaryCompleted}</p>
             <p className="text-2xl font-bold text-green-700">{isLoading ? "—" : completedCount}</p>
           </div>
-        </div>
+        </button>
       </div>
+
+      {hasActiveFilter && (
+        <div className="flex items-center gap-2 px-1">
+          <Filter className="w-4 h-4 text-primary" />
+          <span className="text-sm font-medium text-primary">{getFilterLabel()}</span>
+          <span className="text-sm text-muted-foreground">— {filteredFarmers.length} record{filteredFarmers.length !== 1 ? "s" : ""}</span>
+          <button
+            type="button"
+            onClick={clearFilter}
+            className="ml-auto flex items-center gap-1.5 text-xs text-muted-foreground hover:text-destructive transition-colors"
+          >
+            <XCircle className="w-3.5 h-3.5" />
+            {t.clearFilter}
+          </button>
+        </div>
+      )}
 
       <div className="bg-card border rounded-xl shadow-sm overflow-hidden">
         {isLoading ? (
@@ -694,22 +812,24 @@ export default function FarmersPage() {
             <Skeleton className="h-8 w-full" />
             <Skeleton className="h-8 w-full" />
           </div>
-        ) : farmers && farmers.length > 0 ? (
+        ) : filteredFarmers.length > 0 ? (
           <Table>
             <TableHeader className="bg-muted/50">
               <TableRow>
                 <TableHead>{t.colFarmer}</TableHead>
                 <TableHead>{t.colLocation}</TableHead>
                 <TableHead>{t.colCropDetail}</TableHead>
+                <TableHead>{t.cropStatusLabel}</TableHead>
                 <TableHead>{t.colPayment}</TableHead>
                 <TableHead className="text-right">{t.colActions}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {farmers.map((farmer) => {
+              {filteredFarmers.map((farmer) => {
                 const hasMedia = farmer.mediaUrls && farmer.mediaUrls.length > 0;
                 const imageUrls = (farmer.mediaUrls ?? []).filter((p) => !isVideoPath(p));
                 const videoUrls = (farmer.mediaUrls ?? []).filter((p) => isVideoPath(p));
+                const statusStyle = getCropStatusStyle(farmer.cropStatus);
 
                 return (
                   <TableRow key={farmer.id} data-testid={`row-farmer-${farmer.id}`}>
@@ -735,7 +855,13 @@ export default function FarmersPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="font-medium text-foreground">{farmer.village}</div>
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/farmers?village=${encodeURIComponent(farmer.village)}`)}
+                        className="font-medium text-foreground hover:text-primary hover:underline transition-colors"
+                      >
+                        {farmer.village}
+                      </button>
                       {farmer.harvestDate && (
                         <div className="text-xs text-muted-foreground mt-1">{farmer.harvestDate}</div>
                       )}
@@ -743,7 +869,13 @@ export default function FarmersPage() {
                     <TableCell>
                       <div className="font-medium text-foreground">{farmer.quantity} {t.qt}</div>
                       <div className="flex flex-wrap gap-2 items-center text-xs mt-1">
-                        <span className="text-muted-foreground">{farmer.crop}</span>
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/farmers?crop=${encodeURIComponent(farmer.crop)}`)}
+                          className="text-muted-foreground hover:text-primary hover:underline transition-colors"
+                        >
+                          {farmer.crop}
+                        </button>
                         <span className="text-muted-foreground">&middot;</span>
                         <span className="text-muted-foreground">{farmer.moisture} {t.moist}</span>
                         {farmer.cropGrade && (
@@ -778,6 +910,15 @@ export default function FarmersPage() {
                           )}
                           <span className="ml-0.5">{t.viewMedia}</span>
                         </button>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {farmer.cropStatus ? (
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusStyle.bg}`}>
+                          {farmer.cropStatus}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
                       )}
                     </TableCell>
                     <TableCell>
@@ -830,8 +971,19 @@ export default function FarmersPage() {
           </Table>
         ) : (
           <div className="p-12 text-center text-muted-foreground flex flex-col items-center justify-center">
-            <h3 className="text-lg font-medium text-foreground mb-1">{t.noRecords}</h3>
-            <p>{t.noRecordsHint}</p>
+            <h3 className="text-lg font-medium text-foreground mb-1">
+              {hasActiveFilter ? "No matching records" : t.noRecords}
+            </h3>
+            <p>{hasActiveFilter ? "Try clearing the filter." : t.noRecordsHint}</p>
+            {hasActiveFilter && (
+              <button
+                type="button"
+                onClick={clearFilter}
+                className="mt-3 text-sm text-primary hover:underline"
+              >
+                {t.clearFilter}
+              </button>
+            )}
           </div>
         )}
       </div>

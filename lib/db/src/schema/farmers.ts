@@ -16,6 +16,7 @@ export const farmersTable = pgTable("farmers", {
   notes: text("notes"),
   profilePhotoUrl: text("profile_photo_url"),
   mediaUrls: text("media_urls").array().notNull().default([]),
+  cropStatus: text("crop_status"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

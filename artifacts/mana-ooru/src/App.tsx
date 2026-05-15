@@ -1,4 +1,4 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -12,7 +12,7 @@ import { BuyerProfileProvider, useBuyerProfile } from "@/lib/buyer-profile";
 import { BuyerSetupModal } from "@/components/buyer-setup-modal";
 import { WelcomeSplash } from "@/components/welcome-splash";
 import { useAuth } from "@workspace/replit-auth-web";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const queryClient = new QueryClient();
 
@@ -30,9 +30,18 @@ function Router() {
 }
 
 function AppWithProfile() {
-  const { isSetupDone } = useBuyerProfile();
+  const { profile, isSetupDone } = useBuyerProfile();
   const [setupComplete, setSetupComplete] = useState(isSetupDone);
   const [splashDone, setSplashDone] = useState(false);
+  const [, navigate] = useLocation();
+
+  useEffect(() => {
+    if (profile && setupComplete) {
+      if (profile.role === "buyer") {
+        navigate("/dashboard");
+      }
+    }
+  }, [setupComplete, profile]);
 
   if (!setupComplete) {
     return <BuyerSetupModal onDone={() => setSetupComplete(true)} />;

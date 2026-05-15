@@ -1,8 +1,11 @@
 import { createContext, useContext, useState, useEffect } from "react";
 
+export type UserRole = "buyer" | "farmer";
+
 export interface BuyerProfile {
   name: string;
   photoUrl: string | null;
+  role: UserRole;
 }
 
 interface BuyerProfileContextValue {
@@ -19,7 +22,10 @@ export function BuyerProfileProvider({ children }: { children: React.ReactNode }
   const [profile, setProfileState] = useState<BuyerProfile | null>(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? (JSON.parse(raw) as BuyerProfile) : null;
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as BuyerProfile;
+      if (!parsed.role) return null;
+      return parsed;
     } catch {
       return null;
     }

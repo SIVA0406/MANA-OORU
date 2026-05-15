@@ -5,6 +5,7 @@
  * Mana Ooru - Smart Village Crop Procurement Platform
  * OpenAPI spec version: 0.1.0
  */
+import type { FarmerCropStatus } from "./farmerCropStatus";
 import type { FarmerPaymentStatus } from "./farmerPaymentStatus";
 
 export interface Farmer {
@@ -25,5 +26,7 @@ export interface Farmer {
   /** @nullable */
   profilePhotoUrl?: string | null;
   mediaUrls: string[];
+  /** @nullable */
+  cropStatus?: FarmerCropStatus;
   createdAt: string;
 }

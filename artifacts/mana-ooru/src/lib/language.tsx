@@ -89,6 +89,30 @@ const translations = {
     summaryCompleted: "Completed Payments",
 
     logout: "Log Out",
+    back: "Back",
+
+    roleSelectTitle: "Who are you?",
+    roleSelectSubtitle: "Select your role to get started.",
+    roleFarmer: "Farmer",
+    roleFarmerDesc: "I bring crops to sell.",
+    roleBuyer: "Buyer / Agent",
+    roleBuyerDesc: "I procure crops from farmers.",
+
+    cropStatusLabel: "Crop Status",
+    cropStatusNone: "Not Set",
+    cropStatusOnHold: "On Hold",
+    cropStatusPartiallySold: "Partially Sold",
+    cropStatusFullySold: "Fully Sold",
+    cropStatusSoldOut: "Sold Out",
+
+    filterAll: "All Records",
+    filterPending: "Pending Payments",
+    filterCompleted: "Completed Payments",
+    filterByVillage: "Village",
+    filterByCrop: "Crop",
+    clearFilter: "Clear Filter",
+
+    clickToView: "Click to view",
 
     loginTitle: "Welcome Back",
     loginSubtitle: "Sign in to access the procurement platform.",
@@ -199,6 +223,30 @@ const translations = {
     summaryCompleted: "పూర్తయిన చెల్లింపులు",
 
     logout: "లాగ్ అవుట్",
+    back: "వెనుకకు",
+
+    roleSelectTitle: "మీరు ఎవరు?",
+    roleSelectSubtitle: "ప్రారంభించడానికి మీ పాత్రను ఎంచుకోండి.",
+    roleFarmer: "రైతు",
+    roleFarmerDesc: "నేను పంటలు అమ్మడానికి తీసుకొస్తాను.",
+    roleBuyer: "కొనుగోలుదారు / ఏజెంట్",
+    roleBuyerDesc: "నేను రైతుల నుండి పంటలు కొనుగోలు చేస్తాను.",
+
+    cropStatusLabel: "పంట స్థితి",
+    cropStatusNone: "నిర్ణయించబడలేదు",
+    cropStatusOnHold: "నిలిపి ఉంచారు",
+    cropStatusPartiallySold: "పాక్షికంగా అమ్మారు",
+    cropStatusFullySold: "పూర్తిగా అమ్మారు",
+    cropStatusSoldOut: "స్టాక్ అయిపోయింది",
+
+    filterAll: "అన్ని రికార్డులు",
+    filterPending: "పెండింగ్ చెల్లింపులు",
+    filterCompleted: "పూర్తయిన చెల్లింపులు",
+    filterByVillage: "గ్రామం",
+    filterByCrop: "పంట",
+    clearFilter: "ఫిల్టర్ తొలగించు",
+
+    clickToView: "క్లిక్ చేసి చూడండి",
 
     loginTitle: "స్వాగతం",
     loginSubtitle: "కొనుగోలు వేదికను యాక్సెస్ చేయడానికి లాగిన్ చేయండి.",

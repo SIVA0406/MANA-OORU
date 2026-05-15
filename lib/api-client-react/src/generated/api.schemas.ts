@@ -38,6 +38,20 @@ export const FarmerPaymentStatus = {
   Completed: "Completed",
 } as const;
 
+/**
+ * @nullable
+ */
+export type FarmerCropStatus =
+  | (typeof FarmerCropStatus)[keyof typeof FarmerCropStatus]
+  | null;
+
+export const FarmerCropStatus = {
+  On_Hold: "On Hold",
+  Partially_Sold: "Partially Sold",
+  Fully_Sold: "Fully Sold",
+  Sold_Out: "Sold Out",
+} as const;
+
 export interface Farmer {
   id: number;
   name: string;
@@ -56,8 +70,20 @@ export interface Farmer {
   /** @nullable */
   profilePhotoUrl?: string | null;
   mediaUrls: string[];
+  /** @nullable */
+  cropStatus?: FarmerCropStatus;
   createdAt: string;
 }
+
+export type FarmerInputCropStatus =
+  (typeof FarmerInputCropStatus)[keyof typeof FarmerInputCropStatus];
+
+export const FarmerInputCropStatus = {
+  On_Hold: "On Hold",
+  Partially_Sold: "Partially Sold",
+  Fully_Sold: "Fully Sold",
+  Sold_Out: "Sold Out",
+} as const;
 
 export interface FarmerInput {
   /** @minLength 1 */
@@ -77,7 +103,18 @@ export interface FarmerInput {
   notes?: string;
   profilePhotoUrl?: string;
   mediaUrls?: string[];
+  cropStatus?: FarmerInputCropStatus;
 }
+
+export type FarmerUpdateCropStatus =
+  (typeof FarmerUpdateCropStatus)[keyof typeof FarmerUpdateCropStatus];
+
+export const FarmerUpdateCropStatus = {
+  On_Hold: "On Hold",
+  Partially_Sold: "Partially Sold",
+  Fully_Sold: "Fully Sold",
+  Sold_Out: "Sold Out",
+} as const;
 
 export interface FarmerUpdate {
   name?: string;
@@ -91,6 +128,7 @@ export interface FarmerUpdate {
   notes?: string;
   profilePhotoUrl?: string;
   mediaUrls?: string[];
+  cropStatus?: FarmerUpdateCropStatus;
 }
 
 export type PaymentStatusUpdatePaymentStatus =
